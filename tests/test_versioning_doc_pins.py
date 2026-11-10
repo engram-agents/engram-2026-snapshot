@@ -3,8 +3,9 @@
 The page tells readers of old clones one remedy command, quotes one git error,
 and carries a table of the 16 releases made before v0.5.6 with their
 ``-history-twin`` tags.  Prose does not execute, so these cells fail when the
-copies of that text drift apart.  Stdlib + pytest only; no git, no network (the
-tags are not in the tree, so nothing here depends on them).
+copies of that text drift apart.  Stdlib + pytest only; no network.  Only C7
+calls git, and it skips (never passes unchecked, never fails) when the tags it
+needs are not in the clone.
 
 - C1. The remedy command is the same in README.md, README.zh.md, the v0.5.6
   CHANGELOG section and (as two consecutive lines of one code block)
@@ -13,12 +14,26 @@ tags are not in the tree, so nothing here depends on them).
   CHANGELOG section.
 - C3. Every pointer to VERSIONING.md resolves to the real file.
 - C4. Every same-page ``](#anchor)`` link in VERSIONING.md matches a heading.
-- C5. The table lists exactly the 16 releases, each with its own twin tag.
+- C5. The table is well-formed and lists exactly the 16 releases, each with its
+  own twin tag (names, 9 hex characters, distinctness, ranges; not the values).
 - C6. The page's "at most two files" bound agrees with the table.
+- C7. Where the 16 release tags and the 16 twin commits are present in the
+  clone, the table's values match the repository: release commit, date, file
+  count, twin commit, the twin's diff against the release, and the
+  ``-history-twin`` tag when it exists.  Skips, naming what is missing, if not.
+
+What these cells do NOT pin: the page's advice text.  They pin that the copies
+of the command and the error agree, that pointers and anchors resolve, that the
+table is well-formed and (C7, where the tags are present) that its values match
+the repository.  They do not check, for example, the sentence telling readers
+not to merge the two lines, or the one about naming their own commits first, so
+a green run does not mean the page's advice is right.
 """
 from __future__ import annotations
 
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -57,13 +72,15 @@ def _changelog_v056_section() -> str:
 
 
 def _releases_table() -> list[list[str]]:
-    """Data rows of the table whose header begins '| Release | Released |'."""
+    """Data rows of the table whose header begins '| Release | Release commit date |'."""
     lines = VERSIONING.read_text(encoding="utf-8").splitlines()
     start = next(
-        (i for i, l in enumerate(lines) if l.startswith("| Release | Released |")),
+        (i for i, l in enumerate(lines) if l.startswith("| Release | Release commit date |")),
         None,
     )
-    assert start is not None, "docs/VERSIONING.md has no '| Release | Released |' table"
+    assert start is not None, (
+        "docs/VERSIONING.md has no '| Release | Release commit date |' table"
+    )
     rows = []
     for line in lines[start + 2:]:  # skip the header and the |---| separator
         if not line.startswith("|"):
@@ -162,7 +179,7 @@ def test_c4_same_page_anchors_resolve():
 
 # --- C5 / C6 ----------------------------------------------------------------
 
-def test_c5_table_lists_the_16_releases_with_their_own_twins():
+def test_c5_table_is_well_formed_and_lists_the_16_releases():
     rows = _releases_table()
     assert len(rows) == 16, f"expected 16 data rows, found {len(rows)}"
     assert [r[0] for r in rows] == RELEASES
@@ -189,3 +206,82 @@ def test_c6_stated_bound_matches_the_table():
     )
     changed = [int(r[5]) for r in _releases_table()]
     assert max(changed) <= 2, f"table shows {max(changed)} changed files, page says at most two"
+
+
+# --- C7 ---------------------------------------------------------------------
+
+def _git(*args: str) -> subprocess.CompletedProcess:
+    """Run git against this repo root; local only, never fetches."""
+    return subprocess.run(
+        ["git", "-C", str(REPO_ROOT), *args],
+        capture_output=True, text=True, encoding="utf-8",
+    )
+
+
+def test_c7_table_values_match_git():
+    rows = _releases_table()
+    # Preconditions: any failure SKIPS, naming what is missing.
+    if shutil.which("git") is None:
+        pytest.skip("git is not on PATH")
+    if _git("rev-parse", "--is-inside-work-tree").stdout.strip() != "true":
+        pytest.skip(f"{REPO_ROOT} is not a git checkout")
+    tag_commit = {}
+    for v in RELEASES:
+        r = _git("rev-parse", "--verify", "-q", f"v{v}^{{commit}}")
+        if r.returncode != 0:
+            pytest.skip(f"release tag v{v} is not in this clone (shallow or tagless checkout)")
+        tag_commit[v] = r.stdout.strip()
+    twin_commit = {}
+    for row in rows:
+        v = row[0]
+        m = re.fullmatch(r"`v[^`]+-history-twin` → `([0-9a-f]{9})`", row[3])
+        if not m:
+            pytest.skip(f"row {v}: twin column {row[3]!r} is unreadable (C5 is the cell to read)")
+        r = _git("rev-parse", "--verify", "-q", f"{m.group(1)}^{{commit}}")
+        twin_commit[v] = (m.group(1), r.stdout.strip() if r.returncode == 0 else None)
+    # A clone without the development history has none of the twins: skip.  If
+    # some resolve and others do not, the table is wrong: that is a row failure (4).
+    if not any(full for _, full in twin_commit.values()):
+        pytest.skip(
+            "none of the 16 twin commits named in the table is in this clone "
+            "(shallow checkout, or a clone without the development history)"
+        )
+
+    failures = []
+    for row in rows:
+        v = row[0]
+        tag = f"v{v}"
+        # (1) release commit is a prefix of what the tag peels to
+        m = re.fullmatch(rf"`v{re.escape(v)}` → `([0-9a-f]{{9}})`", row[2])
+        got = m.group(1) if m else row[2]
+        if v not in tag_commit or not tag_commit[v].startswith(got):
+            failures.append(f"{v} (1) release commit: table {got!r}, {tag} peels to {tag_commit.get(v, '?')[:9]}")
+        # (2) date
+        date = _git("log", "-1", "--format=%cs", tag).stdout.strip()
+        if row[1] != date:
+            failures.append(f"{v} (2) date: table {row[1]!r}, git {date!r}")
+        # (3) file count
+        files = len(_git("ls-tree", "-r", "--name-only", tag).stdout.splitlines())
+        if row[4] != str(files):
+            failures.append(f"{v} (3) files: table {row[4]!r}, git {files}")
+        # (4) the twin value resolves to exactly one commit
+        short, full = twin_commit[v]
+        if full is None:
+            failures.append(f"{v} (4) twin: {short} does not resolve to exactly one commit")
+            continue
+        # (5) release -> twin diff has only M and A; M count equals the last column
+        diff = _git("diff", "--no-renames", "--name-status", tag, full).stdout.splitlines()
+        letters = [ln.split("\t", 1)[0] for ln in diff if ln.strip()]
+        odd = sorted({x for x in letters if x not in ("M", "A")})
+        if odd:
+            failures.append(f"{v} (5) diff statuses: expected only M and A, found also {odd}")
+        n_m = letters.count("M")
+        if row[5] != str(n_m):
+            failures.append(f"{v} (5) changed files: table {row[5]!r}, git shows {n_m} M lines")
+        # (6) the twin tag, only when it exists in this clone
+        r = _git("rev-parse", "--verify", "-q", f"refs/tags/{tag}-history-twin^{{commit}}")
+        if r.returncode == 0 and r.stdout.strip() != full:
+            failures.append(
+                f"{v} (6) twin tag: {tag}-history-twin peels to {r.stdout.strip()[:9]}, table says {short}"
+            )
+    assert not failures, "table values disagree with the repository:\n" + "\n".join(failures)
