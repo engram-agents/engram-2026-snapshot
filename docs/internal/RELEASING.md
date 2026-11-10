@@ -8,6 +8,13 @@
 > `release-snapshots`. The current branch and tag rules are in
 > [`docs/VERSIONING.md`](../VERSIONING.md). Where the two disagree, that page
 > is right.
+>
+> **The procedure for cutting a release is not currently written down in this
+> file.** Its next version lands with
+> [engram-agents/engram#16](https://github.com/engram-agents/engram/issues/16).
+> Do not use the steps below as a fallback: the publishing steps run a tool
+> (`tools/release-cutover.py`) and an exclusion list (`release-minus-set.txt`)
+> that are both retired, and the list now excludes nothing.
 
 engram-alpha is a **private** repo. There is a separate **public** repo,
 [`engram-agents/engram`](https://github.com/engram-agents/engram), that holds
@@ -339,6 +346,11 @@ against the public repo. Concretely:
 
 ## Publishing to the public repo
 
+> **Historical — through v0.5.5.** This section and its subsections *One-time
+> setup*, *Running the cutover* and *Dry-run first, then push* describe the
+> retired cutover tool and its exclusion list. They are not the current
+> procedure; see the note at the top of this file.
+
 Once the rc has dogfooded clean, publish it to the public repo,
 [`engram-agents/engram`](https://github.com/engram-agents/engram). The public
 repo carries **one squashed commit per version** — it is a clean, leak-scrubbed
@@ -358,6 +370,11 @@ release snapshot, not a mirror of this repo's full history.
 > pending", never "released". Origin: v0.5.2 was reported released at
 > 2026-10-02 00:1xZ with (2) and (3) undone; the doc already carried both
 > steps, so the fix is the definition and the print, not a third copy.
+>
+> *Historical part, marked 2026-11-10:* how the tag in step (1) is made ("the
+> cutover tool", "the tool does the tag half", its `--push` summary) describes
+> the retired tool. Steps (2) and (3) are unchanged. How the tag is made now is
+> not written here yet; see the note at the top of this file.
 
 ### One-time setup
 
