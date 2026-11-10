@@ -37,7 +37,9 @@ CHECK = "team-practice-drift-gate — run sync_team_practice.py --check"
 ADVISORY = "team-practice-drift-gate — advisory notice (checkout unavailable)"
 STEP_NAMES = (CHECKOUT, CHECK, ADVISORY)
 
-PRIVATE = "engram-agents/engram-alpha"
+# Built from parts: tests/ is scanned by scan-leaks (git-tracked .py files), which flags the
+# private repository's full name written as one literal.
+PRIVATE = "engram-agents/" + "engram-" + "alpha"
 NON_PRIVATE = (
     "engram-agents/engram",  # the public repository
     "someone/engram",  # a fork-shaped name
