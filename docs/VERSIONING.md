@@ -21,7 +21,7 @@ wonder what the tags ending in `-history-twin` are.
 
 | Branch | What it holds |
 |---|---|
-| `main` | Releases. Every release is a tagged commit on `main`. This is the default branch. |
+| `main` | Releases. From v0.5.6 on, every release is a tagged commit on `main`. This is the default branch. |
 | `dev` | Development. Changes are merged here first; `main` moves forward only when a release is made. |
 | `release-snapshots` | The archive: the 17 commits that were `main` up to v0.5.5 (one per release for the 16 releases, and one extra commit from the v0.4.0 release). We do not add to it or change it. |
 
@@ -69,6 +69,14 @@ and you can check it yourself with the commands in the next section:
 
 So a twin is not a second copy of the release. It is the place in the history
 where that release came from.
+
+The file check alone does not single out one commit. For most releases a few
+neighbouring commits also contain every file of the release, because they
+changed only files the release left out. The twin is the commit the release
+was made from: the one that carried that release's candidate tag during
+development. Four early releases (v0.1.0, v0.1.1, v0.1.3 and v0.1.4) have no
+candidate tag that matches; for each of them exactly one commit contains every
+file, and that commit is the twin.
 
 | Release | Release commit date | Release tag (on `release-snapshots`) | Twin tag (on `main` and `dev`) | Files in the release | Of those, changed at the twin |
 |---|---|---|---|---|---|
@@ -140,8 +148,8 @@ fatal: Need to specify how to reconcile divergent branches.
 
 That is the message with git's default settings. If your git is set to
 fast-forward only, it stops with `fatal: Not possible to fast-forward, aborting.`
-instead. If it is set to rebase on pull and you have no commits of your own, the
-pull may simply succeed and leave you on the new `main`; then there is nothing
+instead. If it is set to rebase on pull, the pull may simply succeed and leave you on the
+new `main`, with your own commits (if you had any) on top; then there is nothing
 more to do.
 
 Do not merge the two lines; they have nothing in common. Move your `main` to
@@ -152,8 +160,18 @@ git fetch origin
 git checkout -B main origin/main
 ```
 
-Uncommitted edits are carried along. If git refuses because one of them would
-be overwritten, stash it first (`git stash`) and run the command again.
+Uncommitted edits to files that are the same on both lines are carried along.
+If git refuses, read which list it prints:
+
+- **Files git does not track** ("untracked working tree files would be
+  overwritten"): move them somewhere else and run the command again. The new
+  line has many files the old one did not, so a file of your own can sit where
+  a new file now belongs.
+- **Your own edits to tracked files** ("your local changes ... would be
+  overwritten"): run `git stash`, run the command again, then `git stash pop`
+  to get the edits back.
+
+Do not use `--force` or `checkout -f`: that discards your files.
 
 **If you made commits of your own on the old `main`, give them a name before
 the second command**, because that command moves `main` away from them without
@@ -164,7 +182,9 @@ git branch my-old-main
 ```
 
 They stay on `my-old-main`, on top of the old release line, which remains
-available as `origin/release-snapshots`.
+available as `origin/release-snapshots`. If you already ran the command without
+naming them, they are not lost: `git reflog` lists them, and
+`git branch my-old-main <hash>` gives them a name.
 
 Then continue the upgrade as usual (ask your agent to upgrade ENGRAM, or run
 the upgrade steps in [README-AGENT.md](../README-AGENT.md)). One thing looks
@@ -203,18 +223,19 @@ the change.
 The development history was written in a private repository. Before it was
 published here it was rewritten once, to replace a small number of private
 values (for example machine names and personal mail addresses) with neutral
-ones and to remove one file that should not be public. Three consequences are
+ones, in files, in commit messages and in author fields, and to remove one file
+that should not be public. Three consequences are
 visible:
 
 - **Commit hashes here differ** from the hashes of the same commits in the
   private repository. A hash quoted in an old discussion may not exist here.
 - **A few files differ from the old releases**, as listed above: the same
   values were replaced in them.
-- **Numbers such as `(#4572)` in commit messages up to v0.5.6 refer to pull
-  requests and issues of the private repository.** They are not this
-  repository's issue or pull-request numbers, and a link GitHub draws from such
-  a number points at an unrelated item or at nothing. Issue numbers in commits
-  made after v0.5.6 refer to this repository.
+- **Numbers such as `(#4572)` in commit messages up to commit `80108889`
+  refer to pull requests and issues of the private repository.** They are not
+  this repository's issue or pull-request numbers, and a link GitHub draws from
+  such a number points at an unrelated item or at nothing. Numbers in later
+  commits refer to this repository.
 
 ## From v0.5.6 on
 
