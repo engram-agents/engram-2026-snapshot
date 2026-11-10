@@ -245,7 +245,7 @@ kill-session -t agent-<name>` (or attach and exit normally). This is deliberate:
 the unit is a launcher, not a supervisor, and a session's lifecycle belongs to
 the agent + operator, not to systemd's restart machinery.
 
-## Dress-rehearsal checklist (do this before trusting the real 8:00/9:30 boot)
+## Dress-rehearsal checklist (do this before trusting the real 8:00/8:15 boot)
 
 Run through this **with the operator physically present** (not remote) the
 first time:

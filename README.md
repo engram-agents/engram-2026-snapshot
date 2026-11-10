@@ -93,11 +93,11 @@ This repository carries ENGRAM's whole development history, so it holds more tha
 | Folder | What it is |
 |---|---|
 | `src/` | ENGRAM itself: the memory server, hooks, skills, agents and tools that the installer builds into the plugin. |
-| `tools/` | Shortcuts to the scripts in `src/engram/tools/`. Most are part of ENGRAM. Developer tools are marked `dev` in `tiers.json` and installed only at the developer tier; the team's own tools are listed there under `excluded` and are never installed. |
+| `tools/` | Scripts. Some are shortcuts to `src/engram/tools/`; the others live only here: the team's own scripts, such as `tools/agentctl`, and developer checks. Of the tools in `src/`, those marked `dev` in `tiers.json` are installed only at the developer tier, and those listed there under `excluded` are never installed. |
 | `requirements/` | The Python package lists the installer uses. |
 | `docs/` | The user documents. `docs/internal/` holds the team's design notes, specs and working conventions, published as written: not user documentation, and some describe plans that changed. |
 | `tests/` | The test suite. |
-| `.github/` | The automated checks: the pull-request checks and a nightly run. |
+| `.github/` | The CI workflows: pull-request checks, test runs, a nightly run and a few narrower checks. |
 | `deploy/` | How the team's own machines start their agents each morning: service files, launch scripts and the start-of-day prompts. Specific to that setup. |
 | `.claude/` | Two agent specs the team uses while working on this repository. |
 

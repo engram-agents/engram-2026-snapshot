@@ -56,8 +56,8 @@ ALLOWLIST = {
     "macos-agent-setup.md": "README-AGENT.md links it from its install section (Mac users installing ENGRAM)",
     "os-harness-constraints.md": "tools/os-harness-check.py names it in its docstring and its error output",
 }
-# The only sub-folders of docs/, each with its reason.  "internal" is the one
-# folder the public snapshot does NOT carry (one release-minus-set.txt entry).
+# The only sub-folders of docs/, each with its reason.  "internal" is the
+# developers' tree; it is public since v0.5.6 (release-minus-set.txt is historical).
 SUBFOLDER_REASONS = {
     "assets": "README.md and README.zh.md show assets/engram-triptych.png",
     "handbook": "README.md, README.zh.md and README-AGENT.md send readers to docs/handbook/ for the deep internals",
