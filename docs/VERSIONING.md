@@ -14,7 +14,7 @@ wonder what the tags ending in `-history-twin` are.
 - The old one-commit-per-release line is kept, unchanged, on the branch
   `release-snapshots`.
 - Because the history behind `main` was replaced, **a clone made before v0.5.6
-  cannot `git pull`**. One command fixes it; see
+  cannot `git pull`**. One short command line fixes it; see
   [If you cloned before v0.5.6](#if-you-cloned-before-v056).
 
 ## Branches
@@ -23,7 +23,7 @@ wonder what the tags ending in `-history-twin` are.
 |---|---|
 | `main` | Releases. Every release is a tagged commit on `main`. This is the default branch. |
 | `dev` | Development. Changes are merged here first; `main` moves forward only when a release is made. |
-| `release-snapshots` | The archive: the 17 commits that were `main` up to v0.5.5 (one per release for the 16 releases, and one extra commit from the v0.4.0 release). Nothing new is added here. |
+| `release-snapshots` | The archive: the 17 commits that were `main` up to v0.5.5 (one per release for the 16 releases, and one extra commit from the v0.4.0 release). We do not add to it or change it. |
 
 `main` and `dev` share one history. `release-snapshots` shares no commit with
 them: it was made by copying files, so git sees it as a separate line.
@@ -46,8 +46,8 @@ That is why the old tags `v0.1.0` to `v0.5.5` still point at the archive
 commits, and why the commits they correspond to in the history carry a separate
 tag name.
 
-The installer and the install guide choose the newest tag of the plain form
-`vX.Y.Z`. They never choose a candidate or a twin.
+The install guide picks the newest tag of the plain form `vX.Y.Z`. It never
+picks a candidate or a twin.
 
 ## What "twin" means
 
@@ -64,13 +64,13 @@ and you can check it yourself with the commands in the next section:
    `src/engram/tools/forum_api.py`, `src/forum/tests/test_forum_template.py`
    and `docs/rc-upgrade-runbook.md`.
 3. **The twin also contains files the release left out.** Releases up to
-   v0.5.5 did not include the test suite, internal design notes and development
-   tools. The twin has them, so it holds more files than the release.
+   v0.5.5 did not include the main test suite, internal design notes and
+   development tools. The twin has them, so it holds more files than the release.
 
 So a twin is not a second copy of the release. It is the place in the history
 where that release came from.
 
-| Release | Released | Release tag (on `release-snapshots`) | Twin tag (on `main` and `dev`) | Files in the release | Of those, changed at the twin |
+| Release | Release commit date | Release tag (on `release-snapshots`) | Twin tag (on `main` and `dev`) | Files in the release | Of those, changed at the twin |
 |---|---|---|---|---|---|
 | 0.1.0 | 2026-06-18 | `v0.1.0` → `b1eb1eac8` | `v0.1.0-history-twin` → `bfb020d84` | 331 | 0 |
 | 0.1.1 | 2026-06-19 | `v0.1.1` → `116a3aab0` | `v0.1.1-history-twin` → `942b7734e` | 329 | 0 |
@@ -89,8 +89,9 @@ where that release came from.
 | 0.5.4 | 2026-10-23 | `v0.5.4` → `dd67530dd` | `v0.5.4-history-twin` → `b393e686f` | 626 | 2 |
 | 0.5.5 | 2026-10-29 | `v0.5.5` → `6d8a76419` | `v0.5.5-history-twin` → `9b23ea4f9` | 570 | 1 |
 
-"Released" is the date of the release commit. All 16 twins are commits on both
-`main` and `dev`.
+The date is that of the release commit in this repository. For some releases
+the heading in [CHANGELOG.md](CHANGELOG.md) carries a date a few days earlier.
+All 16 twins are commits on both `main` and `dev`.
 
 ## How to compare versions
 
@@ -137,8 +138,14 @@ Your clone's `main` points at the old line of release commits. After
 fatal: Need to specify how to reconcile divergent branches.
 ```
 
-Do not merge or rebase the two lines; they have nothing in common. Move your
-`main` to the new one instead:
+That is the message with git's default settings. If your git is set to
+fast-forward only, it stops with `fatal: Not possible to fast-forward, aborting.`
+instead. If it is set to rebase on pull and you have no commits of your own, the
+pull may simply succeed and leave you on the new `main`; then there is nothing
+more to do.
+
+Do not merge the two lines; they have nothing in common. Move your `main` to
+the new one instead (this works whatever your pull setting is):
 
 ```bash
 git fetch origin
@@ -160,7 +167,12 @@ They stay on `my-old-main`, on top of the old release line, which remains
 available as `origin/release-snapshots`.
 
 Then continue the upgrade as usual (ask your agent to upgrade ENGRAM, or run
-the upgrade steps in [README-AGENT.md](../README-AGENT.md)). Your graph, history
+the upgrade steps in [README-AGENT.md](../README-AGENT.md)). One thing looks
+different this once: the step that lists what changed since your installed
+version will list the whole history, more than 2,000 commits, because your old
+version is not part of the new line. To see what really changed, use
+`git log --oneline v0.5.5-history-twin..v0.5.6`, or read the v0.5.6 section of
+[CHANGELOG.md](CHANGELOG.md). Your graph, history
 and settings live outside the clone, in your ENGRAM home directory, and are not
 touched by any of this.
 
@@ -175,12 +187,16 @@ git checkout v0.5.6
 ## Installing an older release
 
 We support installing the current release. The old release tags stay in the
-repository for reading and comparing. Their installer checks that the tag's
-commit is on `main` or `dev`; for `v0.5.5` and earlier that is no longer true,
-so the scripted install refuses with a message that the tag is "NOT confirmed
-to be merged". The installer's `--allow-untagged` option turns that refusal
-into a warning. We have not tested old releases installed this way after the
-change.
+repository for reading and comparing.
+
+The install script of v0.5.5 (`tools/install.sh`) checks that the commit it
+runs from is a release tag on `main` or `dev`. After the change the `v0.5.5`
+tag is on neither, so the script stops at that check and says the commit "is
+not a deployable tag merged into origin/dev or origin/main". The script has an
+option that skips the check, `--sandbox-untagged`; its own help describes it as
+for sandbox rigs only, not a release. Older releases have older install scripts
+that may behave differently. We have not tested any old release installed after
+the change.
 
 ## What was changed in the history
 
@@ -205,5 +221,6 @@ visible:
 - Development happens on `dev`, in this repository.
 - A release candidate is a tag `vX.Y.Z-rcN` on `dev`.
 - A release moves `main` forward to the tested commit and tags it `vX.Y.Z`.
-  `main` only moves forward from here on, so `git pull` on `main` works again
-  for every later release.
+  `main` is protected on this repository against being rewritten or deleted,
+  so from here on `git pull` on `main` keeps working from one release to the
+  next.
