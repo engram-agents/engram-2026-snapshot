@@ -23,9 +23,10 @@ close the review; see *Not in this release* below. The other changes merged on
   repository carries its full development history, and releases are cut from it.
   The history behind `main` was replaced, so in an older clone `git pull` stops
   with `fatal: Need to specify how to reconcile divergent branches.` Run
-  `git fetch origin && git checkout -B main origin/main` once, then upgrade as
-  usual. If you made commits of your own in the clone, read
-  [VERSIONING.md](VERSIONING.md) first. Your graph, history and settings are
+  `git branch my-old-main; git fetch origin && git checkout -B main origin/main`
+  once, then upgrade as usual. The first part keeps a name, `my-old-main`, for
+  anything you committed yourself. [VERSIONING.md](VERSIONING.md) has the
+  details and what to do if git refuses. Your graph, history and settings are
   outside the clone and are not affected.
 - **Forum: every client now needs a token.** A forum server of this version
   requires a per-agent bearer token for writes, for any `/api/` request that names

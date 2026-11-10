@@ -13,6 +13,8 @@ wonder what the tags ending in `-history-twin` are.
   2,000 commits), and releases are cut directly from it.
 - The old one-commit-per-release line is kept, unchanged, on the branch
   `release-snapshots`.
+- Each old release also has a tag ending in `-history-twin`, on the commit in
+  the history that the release came from.
 - Because the history behind `main` was replaced, **a clone made before v0.5.6
   cannot `git pull`**. One short command line fixes it; see
   [If you cloned before v0.5.6](#if-you-cloned-before-v056).
@@ -146,16 +148,25 @@ Your clone's `main` points at the old line of release commits. After
 fatal: Need to specify how to reconcile divergent branches.
 ```
 
-That is the message with git's default settings. If your git is set to
-fast-forward only, it stops with `fatal: Not possible to fast-forward, aborting.`
-instead. If it is set to rebase on pull, the pull may simply succeed and leave you on the
-new `main`, with your own commits (if you had any) on top; then there is nothing
-more to do.
+That is the message with git's default settings. With other pull settings you
+may see something else:
 
-Do not merge the two lines; they have nothing in common. Move your `main` to
-the new one instead (this works whatever your pull setting is):
+- **Fast-forward only:** `fatal: Not possible to fast-forward, aborting.`
+- **Merge** (`pull.rebase` set to `false`):
+  `fatal: refusing to merge unrelated histories`. Do not add
+  `--allow-unrelated-histories`; the two lines have nothing in common and
+  should not be merged.
+- **Rebase:** the pull may simply succeed and leave you on the new `main`, with
+  your own commits (if you had any) on top; then there is nothing more to do.
+  Or it may stop part-way with `CONFLICT` and `Could not apply` lines. If it
+  does, run `git rebase --abort` before anything else.
+
+Whatever your setting, these three commands move your `main` to the new one.
+The first gives a name to anything you committed yourself, so that nothing is
+left behind; it does no harm if you committed nothing:
 
 ```bash
+git branch my-old-main
 git fetch origin
 git checkout -B main origin/main
 ```
@@ -173,17 +184,9 @@ If git refuses, read which list it prints:
 
 Do not use `--force` or `checkout -f`: that discards your files.
 
-**If you made commits of your own on the old `main`, give them a name before
-the second command**, because that command moves `main` away from them without
-a warning:
-
-```bash
-git branch my-old-main
-```
-
-They stay on `my-old-main`, on top of the old release line, which remains
-available as `origin/release-snapshots`. If you already ran the command without
-naming them, they are not lost: `git reflog` lists them, and
+Commits of your own stay on `my-old-main`, on top of the old release line,
+which remains available as `origin/release-snapshots`. If you ran the last
+command without the first, they are not lost: `git reflog` lists them, and
 `git branch my-old-main <hash>` gives them a name.
 
 Then continue the upgrade as usual (ask your agent to upgrade ENGRAM, or run
