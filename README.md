@@ -1,3 +1,13 @@
+> [!IMPORTANT]
+> **This repository is frozen and kept as an archive. It is no longer updated.**
+>
+> ENGRAM's canonical repository is **[github.com/engram-agents/engram](https://github.com/engram-agents/engram)**.
+> On 2026-11-11 the public repository was rebuilt so that the full development record (about 4,600 issues and pull requests) is public alongside the code. The code, tags and releases there are identical to the ones here at the time of the move.
+>
+> - Install, upgrade and file issues at the canonical repository.
+> - Issues and pull requests #1 to #20 of this repository continue there as #4577 to #4596 (number + 4576).
+> - If you starred or bookmarked this repository, please move the star or bookmark to the canonical one.
+
 # Epistemic Node Graph for Retraction, Arbitration, and Memory (ENGRAM · 心迹)
 
 ![Three ENGRAM knowledge graphs side by side, growing denser left to right: a sparse newborn graph, a graph with emerging structure, and a dense richly-connected one](docs/assets/engram-triptych.png)
